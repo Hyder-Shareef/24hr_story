@@ -2,17 +2,17 @@ import { STORY_CONFIG } from '../constants/storyConfig.js';
 
 /**
  * StoryStorage Utility: Dedicated LocalStorage persistence engine with Quota guard
- * Meets all QA & Phase 3 requirements:
+ * Simple, beginner-friendly ES6 functions:
  * - getStories()
  * - saveStory(story)
+ * - updateStory(story)
+ * - addReaction(storyId, emoji)
  * - deleteStory(id)
  * - cleanupExpiredStories()
- * - updateStories(stories)
- * - Defensive Base64 integrity validation
  */
 export const StoryStorage = {
   /**
-   * Retrieves all stories stored in LocalStorage, validating object schema and Base64 format.
+   * Retrieves all stories stored in LocalStorage, validating required fields.
    * @returns {Array} Array of valid story objects
    */
   getStories() {
@@ -22,7 +22,6 @@ export const StoryStorage = {
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
 
-      // Validate required fields and Base64 format
       return parsed.filter(item =>
         item &&
         typeof item.id === 'string' &&
@@ -76,6 +75,62 @@ export const StoryStorage = {
       stories: res.success ? updated : current,
       error: res.error
     };
+  },
+
+  /**
+   * Updates an existing story in LocalStorage (title, author, dominantColor, etc.)
+   * @param {Object} updatedData
+   * @returns {{ success: boolean, stories: Array, error?: string }}
+   */
+  updateStory(updatedData) {
+    if (!updatedData || !updatedData.id) {
+      return { success: false, stories: this.getStories(), error: 'Story ID is required to update.' };
+    }
+    const current = this.getStories();
+    let found = false;
+    const updated = current.map((s) => {
+      if (s.id === updatedData.id) {
+        found = true;
+        return {
+          ...s,
+          ...updatedData,
+          createdAt: s.createdAt, // Preserve original timestamp
+          expiresAt: s.expiresAt,
+        };
+      }
+      return s;
+    });
+
+    if (!found) {
+      return { success: false, stories: current, error: 'Story not found.' };
+    }
+
+    const res = this.updateStories(updated);
+    return {
+      success: res.success,
+      stories: res.success ? updated : current,
+      error: res.error,
+    };
+  },
+
+  /**
+   * Adds an emoji reaction to a story (like Instagram Stories)
+   * @param {string} storyId
+   * @param {string} emoji
+   * @returns {Array} Updated stories list
+   */
+  addReaction(storyId, emoji) {
+    const current = this.getStories();
+    const updated = current.map((s) => {
+      if (s.id === storyId) {
+        const reactions = s.reactions || {};
+        reactions[emoji] = (reactions[emoji] || 0) + 1;
+        return { ...s, reactions, lastReactedEmoji: emoji };
+      }
+      return s;
+    });
+    this.updateStories(updated);
+    return updated;
   },
 
   /**

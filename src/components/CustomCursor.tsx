@@ -9,12 +9,10 @@ interface CustomCursorProps {
 
 export default function CustomCursor({ mode = 'default' }: CustomCursorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const targetPosRef = useRef({ x: -100, y: -100 });
-  const currentPosRef = useRef({ x: -100, y: -100 });
   const [isVisible, setIsVisible] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
-  // Check touch device on mount
+  // Detect touch screens on mount to disable custom cursor on mobile
   useEffect(() => {
     const isTouch =
       'ontouchstart' in window ||
@@ -23,18 +21,29 @@ export default function CustomCursor({ mode = 'default' }: CustomCursorProps) {
     setIsTouchDevice(isTouch);
   }, []);
 
-  // Native pointermove listener on window (zero React state updates on mouse move!)
+  // Zero-lag native pointer tracking
   useEffect(() => {
     if (isTouchDevice) return;
 
-    let hasMoved = false;
+    let rafId: number | null = null;
+    let latestX = -100;
+    let latestY = -100;
+
+    const updatePosition = () => {
+      if (containerRef.current) {
+        // Exact geometric centering (50px / 2 = 25px offset)
+        containerRef.current.style.transform = `translate3d(${latestX - 25}px, ${latestY - 25}px, 0)`;
+      }
+      rafId = null;
+    };
 
     const handlePointerMove = (e: PointerEvent) => {
-      targetPosRef.current = { x: e.clientX, y: e.clientY };
-      if (!hasMoved) {
-        currentPosRef.current = { x: e.clientX, y: e.clientY };
-        hasMoved = true;
-        setIsVisible(true);
+      latestX = e.clientX;
+      latestY = e.clientY;
+      setIsVisible(true);
+
+      if (!rafId) {
+        rafId = requestAnimationFrame(updatePosition);
       }
     };
 
@@ -54,39 +63,8 @@ export default function CustomCursor({ mode = 'default' }: CustomCursorProps) {
       window.removeEventListener('pointermove', handlePointerMove);
       document.removeEventListener('mouseleave', handlePointerLeave);
       document.removeEventListener('mouseenter', handlePointerEnter);
+      if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [isTouchDevice]);
-
-  // High-performance animation loop updating translate3d via ref
-  useEffect(() => {
-    if (isTouchDevice) return;
-
-    let animId: number;
-    let lastTime = performance.now();
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const loop = (now: number) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.05);
-      lastTime = now;
-
-      if (reducedMotion) {
-        currentPosRef.current = targetPosRef.current;
-      } else {
-        // Fast, tight spring easing (factor ~26) so cursor tracks closely without perceptible lag
-        const factor = 1 - Math.exp(-28 * dt);
-        currentPosRef.current.x += (targetPosRef.current.x - currentPosRef.current.x) * factor;
-        currentPosRef.current.y += (targetPosRef.current.y - currentPosRef.current.y) * factor;
-      }
-
-      if (containerRef.current) {
-        containerRef.current.style.transform = `translate3d(${currentPosRef.current.x}px, ${currentPosRef.current.y}px, 0)`;
-      }
-
-      animId = requestAnimationFrame(loop);
-    };
-
-    animId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animId);
   }, [isTouchDevice]);
 
   if (isTouchDevice) return null;
@@ -105,10 +83,11 @@ export default function CustomCursor({ mode = 'default' }: CustomCursorProps) {
   return (
     <div
       ref={containerRef}
-      className={`custom-cursor fixed top-0 left-0 pointer-events-none z-[9999] select-none -translate-x-1/2 -translate-y-1/2 ${stateClass}`}
+      className={`custom-cursor fixed top-0 left-0 pointer-events-none select-none ${stateClass}`}
       style={{
         opacity: isVisible ? 1 : 0,
-        transition: 'opacity 0.2s ease',
+        zIndex: 99999,
+        pointerEvents: 'none',
       }}
       aria-hidden="true"
     >
@@ -116,14 +95,14 @@ export default function CustomCursor({ mode = 'default' }: CustomCursorProps) {
         {mode === 'default' && <div className="cursor-dot" />}
         {mode === 'btn' && <div className="cursor-dot scale-125 bg-[var(--cobalt)]" />}
         {mode === 'open' && (
-          <span className="lbl font-bold text-[9px] tracking-widest text-white uppercase select-none">
+          <span className="lbl font-bold text-[8.5px] tracking-widest text-white uppercase select-none">
             OPEN
           </span>
         )}
         {mode === 'add' && (
           <div className="flex items-center gap-0.5 text-white">
-            <Plus size={11} strokeWidth={2.5} />
-            <span className="lbl font-bold text-[8.5px] tracking-wider uppercase select-none">
+            <Plus size={10} strokeWidth={2.5} />
+            <span className="lbl font-bold text-[8px] tracking-wider uppercase select-none">
               ADD
             </span>
           </div>

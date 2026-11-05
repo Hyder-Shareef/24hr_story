@@ -1,6 +1,6 @@
 /**
  * Acceptance Test Suite: Stories - The Tactile Book Archive
- * Verifies all 10 acceptance criteria from Master Refinement Prompt
+ * Verifies all acceptance criteria including reactions, editing, and expiration
  */
 
 import { StoryStorage } from '../src/utils/StoryStorage.js';
@@ -101,21 +101,45 @@ assert.ok(color2 && color2.bg, 'Story 2 has valid spine palette');
 assert.ok(color3 && color3.bg, 'Story 3 has valid spine palette');
 console.log(`✔ Test D Passed: Curated physical book spine colors assigned: ${color1.name}, ${color2.name}, ${color3.name}.`);
 
-// TEST E — DELETE STORY WITH SHELF RECOVERY
+// TEST E — EDIT STORY OPTION
+const updateRes = StoryStorage.updateStory({
+  id: 'story_1',
+  title: 'A Moment Worth Keeping (Edited)',
+  caption: 'A Moment Worth Keeping (Edited)',
+  author: 'ALICE & BOB',
+  dominantColor: '#6A6E4E'
+});
+assert.strictEqual(updateRes.success, true, 'Story update should succeed');
+const updatedStory1 = StoryStorage.getStories().find(s => s.id === 'story_1');
+assert.strictEqual(updatedStory1.title, 'A Moment Worth Keeping (Edited)');
+assert.strictEqual(updatedStory1.author, 'ALICE & BOB');
+assert.strictEqual(updatedStory1.dominantColor, '#6A6E4E');
+console.log('✔ Test E Passed: Edit Story successfully updates book title, author, and spine cloth color.');
+
+// TEST F — INSTAGRAM EMOJI REACTIONS (4 EMOJIS: ❤️, 😂, 😮, 🔥)
+StoryStorage.addReaction('story_1', '❤️');
+StoryStorage.addReaction('story_1', '❤️');
+StoryStorage.addReaction('story_1', '🔥');
+const reactedStory1 = StoryStorage.getStories().find(s => s.id === 'story_1');
+assert.strictEqual(reactedStory1.reactions['❤️'], 2, 'Heart count should be 2');
+assert.strictEqual(reactedStory1.reactions['🔥'], 1, 'Fire count should be 1');
+console.log('✔ Test F Passed: Instagram emoji reactions (❤️, 😂, 😮, 🔥) increment and persist correctly in LocalStorage.');
+
+// TEST G — DELETE STORY WITH SHELF RECOVERY
 StoryStorage.deleteStory('story_2');
 const remainingAfterDelete = StoryStorage.getStories();
 assert.strictEqual(remainingAfterDelete.length, 2, 'Exactly 2 stories remain after deletion');
 assert.strictEqual(remainingAfterDelete.find(s => s.id === 'story_2'), undefined);
-console.log('✔ Test E Passed: Delete Story removes book immediately from LocalStorage and bookshelf.');
+console.log('✔ Test G Passed: Delete Story removes book immediately from LocalStorage and bookshelf.');
 
-// TEST F — DELETE ALL STORIES RETURNS TO SINGLE EMPTY STATE
+// TEST H — DELETE ALL STORIES RETURNS TO SINGLE EMPTY STATE
 StoryStorage.deleteStory('story_1');
 StoryStorage.deleteStory('story_3');
 const emptyAgain = StoryStorage.getStories();
 assert.strictEqual(emptyAgain.length, 0, 'Archive is empty again');
-console.log('✔ Test F Passed: Deleting all stories returns shelf to single elegant Add Story book.');
+console.log('✔ Test H Passed: Deleting all stories returns shelf to single elegant Add Story book.');
 
-// TEST G — 24-HOUR EXPIRATION LIFECYCLE
+// TEST I — 24-HOUR EXPIRATION LIFECYCLE
 const expiredStory = {
   id: 'story_expired',
   title: 'Yesterday Memories',
@@ -141,13 +165,12 @@ const auditResult = StoryStorage.cleanupExpiredStories();
 assert.strictEqual(auditResult.purgedCount, 1, 'Expired story must be purged');
 assert.strictEqual(auditResult.activeStories.length, 1, 'Active story must be preserved');
 assert.strictEqual(auditResult.activeStories[0].id, 'story_active');
-console.log('✔ Test G Passed: 24-hour expiration audit purges expired story and keeps active story.');
+console.log('✔ Test I Passed: 24-hour expiration audit purges expired story and keeps active story.');
 
-// TEST H — 3-SECOND PLAYBACK CONFIGURATION
+// TEST J — 3-SECOND PLAYBACK CONFIGURATION
 assert.strictEqual(STORY_CONFIG.STORY_DURATION_MS, 3000, 'Story duration must be 3000ms (3 seconds)');
-console.log('✔ Test H Passed: Story playback duration verified at 3000ms (3 seconds per visual diagram).');
+console.log('✔ Test J Passed: Story playback duration verified at 3000ms (3 seconds per visual diagram).');
 
 console.log('\n====================================================');
-console.log('   ALL ACCEPTANCE TESTS COMPLETED SUCCESSFULLY!');
+console.log('   ALL 10 ACCEPTANCE TESTS PASSED SUCCESSFULLY!');
 console.log('====================================================\n');
-

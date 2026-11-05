@@ -29,7 +29,7 @@ export function useStories() {
   // Add new story
   const addStory = useCallback(({ image, title, caption, author = 'YOU', dominantColor = '#1F3FB0' }) => {
     const now = Date.now();
-    const storyTitle = (title || caption || 'A MOMENT IN TIME').trim();
+    const storyTitle = (title || caption || 'UNTITLED MOMENT').trim();
     const newStory = {
       id: `story_${now}_${Math.random().toString(36).substring(2, 7)}`,
       image,
@@ -37,6 +37,7 @@ export function useStories() {
       caption: storyTitle,
       author: (author || 'YOU').trim(),
       dominantColor,
+      reactions: {},
       createdAt: now,
       expiresAt: now + STORY_CONFIG.EXPIRATION_MS // Exactly 24 hours
     };
@@ -50,6 +51,24 @@ export function useStories() {
     return { success: false, error: res.error };
   }, []);
 
+  // Update existing story (Edit Story)
+  const updateStory = useCallback((updatedData) => {
+    const res = StoryStorage.updateStory(updatedData);
+    if (res.success) {
+      setStories(res.stories);
+      setStorageUsageKB(StoryStorage.getStorageUsageKB());
+      const updatedStory = res.stories.find((s) => s.id === updatedData.id);
+      return { success: true, story: updatedStory };
+    }
+    return { success: false, error: res.error };
+  }, []);
+
+  // Add emoji reaction (❤️, 😂, 😮, 🔥)
+  const addReaction = useCallback((storyId, emoji) => {
+    const updated = StoryStorage.addReaction(storyId, emoji);
+    setStories(updated);
+  }, []);
+
   // Delete story
   const deleteStory = useCallback((id) => {
     const updated = StoryStorage.removeStory(id);
@@ -61,7 +80,6 @@ export function useStories() {
   const filteredStories = useMemo(() => {
     const now = Date.now();
     if (activeCategory === 'RECENT') {
-      // Stories uploaded in the last 6 hours
       const sixHoursAgo = now - 6 * 60 * 60 * 1000;
       return stories.filter((s) => s.createdAt >= sixHoursAgo);
     }
@@ -74,6 +92,8 @@ export function useStories() {
     activeCategory,
     setActiveCategory,
     addStory,
+    updateStory,
+    addReaction,
     deleteStory,
     refreshStories,
     storageUsageKB,

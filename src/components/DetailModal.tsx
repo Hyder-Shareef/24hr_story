@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Trash2, ChevronLeft, ChevronRight, X, AlertTriangle } from 'lucide-react';
+import { Trash2, Pencil, ChevronLeft, ChevronRight, X, AlertTriangle } from 'lucide-react';
 import { StoryBook } from '../types/films';
 import { ExpirationManager } from '../utils/ExpirationManager';
 import StoryProgressBar from './StoryViewer/StoryProgressBar';
+import EmojiReactions from './StoryViewer/EmojiReactions';
+import EditStoryModal from './UploadModal/EditStoryModal';
 import { useStoryPlayback } from '../hooks/useStoryPlayback';
 
 interface DetailModalProps {
@@ -14,17 +16,21 @@ interface DetailModalProps {
   onNext?: () => void;
   onPrev?: () => void;
   onDeleteStory?: (id: string) => void;
+  onUpdateStory?: (updatedStory: StoryBook) => void;
+  onReactToStory?: (storyId: string, emoji: string) => void;
   getCoverRect: () => DOMRect | null;
 }
 
-const BLOBS = [
-  { cx: 150, cy: 330, delay: 0 },
-  { cx: 340, cy: 600, delay: 110 },
-  { cx: 250, cy: 120, delay: 200 },
-  { cx: 90, cy: 760, delay: 280 },
-  { cx: 400, cy: 250, delay: 340 },
-  { cx: 260, cy: 860, delay: 400 },
-  { cx: 230, cy: 470, delay: 170 },
+// Multi-layered organic inkdrop impact and radial splatter droplets
+const INK_DROPLETS = [
+  { cx: 237, cy: 450, rMax: 920, delay: 0 },    // Core central droplet impact
+  { cx: 160, cy: 310, rMax: 480, delay: 90 },   // Radial splatter 1
+  { cx: 330, cy: 590, rMax: 520, delay: 140 },  // Radial splatter 2
+  { cx: 280, cy: 210, rMax: 440, delay: 200 },  // Radial splatter 3
+  { cx: 100, cy: 660, rMax: 460, delay: 260 },  // Radial splatter 4
+  { cx: 400, cy: 370, rMax: 480, delay: 310 },  // Radial splatter 5
+  { cx: 230, cy: 790, rMax: 460, delay: 360 },  // Radial splatter 6
+  { cx: 80, cy: 440, rMax: 400, delay: 180 },   // Outer droplet 7
 ];
 
 export default function DetailModal({
@@ -36,6 +42,8 @@ export default function DetailModal({
   onNext,
   onPrev,
   onDeleteStory,
+  onUpdateStory,
+  onReactToStory,
   getCoverRect,
 }: DetailModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -45,12 +53,13 @@ export default function DetailModal({
   const [activeStoryState, setActiveStoryState] = useState<StoryBook | null>(story);
   const [isRendered, setIsRendered] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   // Playback engine for automatic 3-second story progression
   const { progress, isPaused, pause, resume } = useStoryPlayback({
     currentIndex,
     totalStories: totalItems,
-    isOpen: isOpen && !showDeleteConfirm,
+    isOpen: isOpen && !showDeleteConfirm && !isEditOpen,
     onNext: () => onNext?.(),
     onComplete: () => onClose(),
   });
@@ -60,6 +69,7 @@ export default function DetailModal({
     if (isOpen && story) {
       setActiveStoryState(story);
       setShowDeleteConfirm(false);
+      setIsEditOpen(false);
     }
   }, [isOpen, story]);
 
@@ -73,9 +83,9 @@ export default function DetailModal({
       setIsRendered(true);
       dialog.style.visibility = 'visible';
 
-      // 1. Reset blob radii
+      // 1. Reset blob radii to 0 for initial droplet impact
       circleRefs.current.forEach((circle) => {
-        if (circle) circle.setAttribute('r', reducedMotion ? '720' : '0');
+        if (circle) circle.setAttribute('r', reducedMotion ? '920' : '0');
       });
 
       // 2. Measure active book cover rect for origin
@@ -103,13 +113,13 @@ export default function DetailModal({
         textLineRefs.current.forEach((line) => {
           if (line) line.style.transform = 'translateY(0%)';
         });
-        circleRefs.current.forEach((circle) => {
-          if (circle) circle.setAttribute('r', '720');
+        circleRefs.current.forEach((circle, idx) => {
+          if (circle) circle.setAttribute('r', `${INK_DROPLETS[idx]?.rMax || 920}`);
         });
         return;
       }
 
-      // Animate paper sheet expansion
+      // Paper sheet expansion from book
       const keyframes = [
         {
           clipPath: `inset(${top}px ${right}px ${bottom}px ${left}px round 3px)`,
@@ -122,7 +132,7 @@ export default function DetailModal({
       ];
 
       const anim = dialog.animate(keyframes, {
-        duration: 1000,
+        duration: 950,
         easing: 'cubic-bezier(0.76, 0, 0.18, 1)',
         fill: 'both',
       });
@@ -138,23 +148,23 @@ export default function DetailModal({
           ],
           {
             duration: 850,
-            delay: 580 + idx * 70,
+            delay: 550 + idx * 70,
             easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
             fill: 'both',
           }
         );
       });
 
-      // 4. Cinematic Organic Ink Blots expansion
+      // 4. Inkdrop impact bloom across paper fibers
       let rafId: number;
-      const startTime = performance.now() + 480;
-      const duration = 1200;
+      const startTime = performance.now() + 450;
+      const duration = 1150;
 
       const animateBlobs = (now: number) => {
         const elapsed = now - startTime;
         let allDone = true;
 
-        BLOBS.forEach((blob, i) => {
+        INK_DROPLETS.forEach((blob, i) => {
           const circle = circleRefs.current[i];
           if (!circle) return;
 
@@ -164,18 +174,20 @@ export default function DetailModal({
             allDone = false;
           } else {
             const p = Math.min(1, blobElapsed / duration);
-            const ease = 1 - Math.pow(1 - p, 3);
-            const radius = ease * 720;
+            // Organic fluid viscous expansion curve
+            const ease = 1 - Math.pow(1 - p, 3.2);
+            const radius = ease * blob.rMax;
             circle.setAttribute('r', radius.toFixed(1));
             if (p < 1) allDone = false;
           }
         });
 
-        if (elapsed < 2300 && !allDone) {
+        if (elapsed < 2100 && !allDone) {
           rafId = requestAnimationFrame(animateBlobs);
         } else {
-          circleRefs.current.forEach((circle) => {
-            if (circle) circle.setAttribute('r', '720');
+          INK_DROPLETS.forEach((blob, i) => {
+            const circle = circleRefs.current[i];
+            if (circle) circle.setAttribute('r', `${blob.rMax}`);
           });
         }
       };
@@ -186,7 +198,7 @@ export default function DetailModal({
         cancelAnimationFrame(rafId);
       };
     } else if (isRendered) {
-      // Reverse closing sequence back into selected book
+      // 5. REVERSE INK-DROP REVEAL: Drains all ink back into central droplet on close!
       const coverRect = getCoverRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -209,6 +221,30 @@ export default function DetailModal({
         return;
       }
 
+      // Reverse ink drain animation loop
+      let drainRafId: number;
+      const drainStartTime = performance.now();
+      const drainDuration = 650;
+
+      const animateReverseDrain = (now: number) => {
+        const elapsed = now - drainStartTime;
+        const p = Math.min(1, elapsed / drainDuration);
+        const ease = Math.pow(1 - p, 2.5); // Sucks ink back inward
+
+        INK_DROPLETS.forEach((blob, i) => {
+          const circle = circleRefs.current[i];
+          if (circle) {
+            circle.setAttribute('r', `${(blob.rMax * ease).toFixed(1)}`);
+          }
+        });
+
+        if (p < 1) {
+          drainRafId = requestAnimationFrame(animateReverseDrain);
+        }
+      };
+
+      drainRafId = requestAnimationFrame(animateReverseDrain);
+
       const closeAnim = dialog.animate(
         [
           {
@@ -221,13 +257,14 @@ export default function DetailModal({
           },
         ],
         {
-          duration: 800,
+          duration: 750,
           easing: 'cubic-bezier(0.76, 0, 0.18, 1)',
           fill: 'both',
         }
       );
 
       closeAnim.onfinish = () => {
+        cancelAnimationFrame(drainRafId);
         dialog.style.visibility = 'hidden';
         setIsRendered(false);
         closeAnim.cancel();
@@ -239,8 +276,11 @@ export default function DetailModal({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
-      if (showDeleteConfirm) {
-        if (e.key === 'Escape') setShowDeleteConfirm(false);
+      if (showDeleteConfirm || isEditOpen) {
+        if (e.key === 'Escape') {
+          setShowDeleteConfirm(false);
+          setIsEditOpen(false);
+        }
         return;
       }
 
@@ -254,7 +294,7 @@ export default function DetailModal({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, showDeleteConfirm, onClose, onNext, onPrev]);
+  }, [isOpen, showDeleteConfirm, isEditOpen, onClose, onNext, onPrev]);
 
   if (!activeStoryState) return null;
 
@@ -272,6 +312,14 @@ export default function DetailModal({
     }
   };
 
+  const handleSaveEdit = (updated: StoryBook) => {
+    setActiveStoryState(updated);
+    if (onUpdateStory) {
+      onUpdateStory(updated);
+    }
+    resume();
+  };
+
   return (
     <div
       ref={dialogRef}
@@ -285,7 +333,7 @@ export default function DetailModal({
       onPointerDown={pause}
       onPointerUp={resume}
     >
-      {/* 3-second Segmented Story Progress Bar (per diagram) */}
+      {/* 3-second Segmented Story Progress Bar (fills up in 3s) */}
       <StoryProgressBar
         totalStories={Math.max(1, totalItems)}
         currentIndex={currentIndex}
@@ -315,8 +363,24 @@ export default function DetailModal({
           </span>
         </div>
 
-        {/* Right Actions: Delete Story button & Expiry */}
-        <div className="flex items-center gap-3">
+        {/* Right Actions: Edit Story & Delete Story & Expiry */}
+        <div className="flex items-center gap-2.5">
+          {/* Edit Story Button */}
+          <button
+            type="button"
+            onClick={() => {
+              pause();
+              setIsEditOpen(true);
+            }}
+            className="box lbl text-[var(--cobalt)] border-[var(--cobalt)] hover:bg-[var(--cobalt)] hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 px-3 py-1.5"
+            data-cursor="btn"
+            aria-label="Edit story"
+          >
+            <Pencil size={12} />
+            <span>EDIT</span>
+          </button>
+
+          {/* Delete Story Button */}
           {onDeleteStory && (
             <button
               type="button"
@@ -328,12 +392,12 @@ export default function DetailModal({
               data-cursor="btn"
               aria-label="Delete story"
             >
-              <Trash2 size={13} />
-              <span>DELETE STORY</span>
+              <Trash2 size={12} />
+              <span>DELETE</span>
             </button>
           )}
 
-          <span className="lbl text-[var(--cobalt)] hidden md:inline-block">
+          <span className="lbl text-[var(--cobalt)] hidden md:inline-block ml-1">
             {timeRemaining.toUpperCase()}
           </span>
         </div>
@@ -388,8 +452,19 @@ export default function DetailModal({
         </div>
       )}
 
+      {/* Edit Story Modal */}
+      <EditStoryModal
+        story={activeStoryState}
+        isOpen={isEditOpen}
+        onClose={() => {
+          setIsEditOpen(false);
+          resume();
+        }}
+        onSave={handleSaveEdit}
+      />
+
       {/* Main Content Grid: 2 equal columns */}
-      <div className="flex-1 w-full max-w-[1600px] mx-auto grid grid-cols-2 max-md:flex max-md:flex-col gap-[4vw] max-md:gap-[24px] pt-[110px] max-md:pt-[84px] px-[7vw] max-md:px-[22px] pb-[56px] max-md:pb-[40px] items-center relative">
+      <div className="flex-1 w-full max-w-[1600px] mx-auto grid grid-cols-2 max-md:flex max-md:flex-col gap-[4vw] max-md:gap-[20px] pt-[100px] max-md:pt-[76px] px-[7vw] max-md:px-[20px] pb-[40px] max-md:pb-[24px] items-center relative">
         {/* Mobile Poster (moves first in single column on mobile) */}
         <div className="hidden max-md:flex items-center justify-center w-full h-[46svh]">
           <svg
@@ -415,8 +490,8 @@ export default function DetailModal({
           </svg>
         </div>
 
-        {/* Left Column: text details */}
-        <div className="flex flex-col justify-center max-w-[520px] gap-[18px] max-md:gap-[14px]">
+        {/* Left Column: text details & navigation */}
+        <div className="flex flex-col justify-center max-w-[520px] gap-[18px] max-md:gap-[12px]">
           {/* 1. Subtitle: BY YOU / PERSONAL ARCHIVE */}
           <div className="overflow-hidden">
             <div
@@ -435,7 +510,7 @@ export default function DetailModal({
               ref={(el) => {
                 textLineRefs.current[1] = el;
               }}
-              className="font-serif-custom text-[clamp(44px,5.4vw,84px)] max-md:text-[38px] leading-[1] tracking-[-0.025em] text-[var(--ink)] font-normal"
+              className="font-serif-custom text-[clamp(40px,5vw,78px)] max-md:text-[34px] leading-[1.05] tracking-[-0.025em] text-[var(--ink)] font-normal"
             >
               {activeStoryState.title || activeStoryState.caption || 'UNTITLED MOMENT'}
             </h1>
@@ -459,14 +534,14 @@ export default function DetailModal({
               ref={(el) => {
                 textLineRefs.current[3] = el;
               }}
-              className="font-serif-custom text-[17px] max-md:text-[16px] leading-[1.5] text-[var(--ink)] max-w-[42ch]"
+              className="font-serif-custom text-[16px] max-md:text-[15px] leading-[1.5] text-[var(--ink)] max-w-[42ch]"
             >
               Preserved in your private browser archive. Available for 24 hours from creation before automatic local expiration.
             </p>
           </div>
 
-          {/* 5. Navigation Buttons */}
-          <div className="overflow-hidden pt-4 flex items-center gap-3">
+          {/* 5. Navigation Buttons & Instagram Emoji Reactions Bar */}
+          <div className="overflow-hidden pt-3 flex flex-col gap-4">
             <div
               ref={(el) => {
                 textLineRefs.current[4] = el;
@@ -477,7 +552,7 @@ export default function DetailModal({
                 <button
                   type="button"
                   onClick={onPrev}
-                  className="box lbl h-[44px] px-[18px] border-[var(--ink)] text-[var(--ink)] hover:bg-[var(--ink)] hover:text-white transition-colors cursor-pointer select-none"
+                  className="box lbl h-[42px] px-[16px] border-[var(--ink)] text-[var(--ink)] hover:bg-[var(--ink)] hover:text-white transition-colors cursor-pointer select-none"
                   data-cursor="btn"
                 >
                   &larr; PREVIOUS
@@ -487,17 +562,31 @@ export default function DetailModal({
                 <button
                   type="button"
                   onClick={onNext}
-                  className="box lbl h-[44px] px-[20px] border-[var(--cobalt)] text-[var(--cobalt)] hover:bg-[var(--cobalt)] hover:text-white transition-colors cursor-pointer select-none"
+                  className="box lbl h-[42px] px-[18px] border-[var(--cobalt)] text-[var(--cobalt)] hover:bg-[var(--cobalt)] hover:text-white transition-colors cursor-pointer select-none"
                   data-cursor="btn"
                 >
                   NEXT STORY &rarr;
                 </button>
               )}
             </div>
+
+            {/* Instagram Quick Reactions Bar */}
+            <div className="pt-1 flex items-center gap-3">
+              <span className="lbl text-[10px] text-[var(--muted)] tracking-wider">REACT:</span>
+              <EmojiReactions
+                storyId={activeStoryState.id}
+                reactions={activeStoryState.reactions || {}}
+                onReact={(emoji) => {
+                  if (onReactToStory && activeStoryState) {
+                    onReactToStory(activeStoryState.id, emoji);
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Right Column (Desktop): Full Story Image with Ink Blot Reveal */}
+        {/* Right Column (Desktop): Full Story Image with Inkdrop Bloom & Reverse Drain */}
         <div className="max-md:hidden flex items-center justify-center h-full max-h-[78vh] relative">
           {/* Click zones for Previous (left 35%) and Next (right 65%) */}
           <div
@@ -523,33 +612,35 @@ export default function DetailModal({
             aria-hidden="true"
           >
             <defs>
-              <filter id="ink-bleed" x="-20%" y="-20%" width="140%" height="140%">
+              {/* High-Viscosity Ink Bleed Fractal Filter */}
+              <filter id="ink-bleed-filter" x="-30%" y="-30%" width="160%" height="160%">
                 <feTurbulence
                   type="fractalNoise"
-                  baseFrequency="0.011"
-                  numOctaves="3"
-                  seed="7"
+                  baseFrequency="0.014"
+                  numOctaves="4"
+                  seed="11"
                   result="noise"
                 />
                 <feDisplacementMap
                   in="SourceGraphic"
                   in2="noise"
-                  scale="120"
+                  scale="160"
                   xChannelSelector="R"
                   yChannelSelector="G"
                 />
               </filter>
 
+              {/* Ink-Drop Radial Splatter Mask */}
               <mask
-                id="detail-ink-mask"
+                id="reverse-ink-mask"
                 maskUnits="userSpaceOnUse"
-                x="-200"
-                y="-200"
-                width="874"
-                height="1300"
+                x="-300"
+                y="-300"
+                width="1074"
+                height="1500"
               >
-                <g filter="url(#ink-bleed)">
-                  {BLOBS.map((blob, idx) => (
+                <g filter="url(#ink-bleed-filter)">
+                  {INK_DROPLETS.map((blob, idx) => (
                     <circle
                       key={idx}
                       ref={(el) => {
@@ -577,7 +668,7 @@ export default function DetailModal({
                 width="474"
                 height="900"
                 preserveAspectRatio="xMidYMid slice"
-                mask="url(#detail-ink-mask)"
+                mask="url(#reverse-ink-mask)"
               />
             </g>
           </svg>

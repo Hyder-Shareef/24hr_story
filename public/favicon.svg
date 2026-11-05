@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="6" fill="#1F3FB0" />
+  <!-- Book spine -->
+  <rect x="5" y="4" width="4" height="24" rx="1" fill="#EDEBE6" />
+  <!-- Spine debossed rule -->
+  <line x1="6" y1="8" x2="8" y2="8" stroke="#1F3FB0" stroke-width="1" />
+  <line x1="6" y1="24" x2="8" y2="24" stroke="#1F3FB0" stroke-width="1" />
+  <!-- Book cover body -->
+  <rect x="9" y="4" width="18" height="24" rx="2" fill="#F4F2ED" />
+  <!-- Bookmark ribbon in terracotta -->
+  <path d="M20 4v9l-2.5-2-2.5 2V4z" fill="#A65A46" />
+  <!-- Story circle aperture -->
+  <circle cx="15.5" cy="18" r="4.5" fill="none" stroke="#1F3FB0" stroke-width="1.5" />
+  <circle cx="15.5" cy="18" r="2" fill="#1F3FB0" />
+</svg>

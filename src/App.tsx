@@ -20,6 +20,8 @@ export default function App() {
     activeCategory,
     setActiveCategory,
     addStory,
+    updateStory,
+    addReaction,
     deleteStory,
     storageUsageKB,
   } = useStories();
@@ -286,6 +288,11 @@ export default function App() {
         onNext={handleViewerNext}
         onPrev={handleViewerPrev}
         onDeleteStory={handleDeleteStory}
+        onUpdateStory={(updated) => {
+          updateStory(updated);
+          setActiveStory(updated);
+        }}
+        onReactToStory={addReaction}
         getCoverRect={() => {
           if (activeCoverRef.current) {
             return activeCoverRef.current.getBoundingClientRect();

@@ -7,5 +7,7 @@ export interface StoryBook {
   expiresAt: number;
   dominantColor?: string;
   caption?: string;
+  reactions?: Record<string, number>;
+  lastReactedEmoji?: string;
   isAddCard?: boolean;
 }

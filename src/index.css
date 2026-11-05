@@ -211,16 +211,18 @@
   position: fixed;
   left: 0;
   top: 0;
-  width: 58px;
-  height: 58px;
-  margin-left: -29px;
-  margin-top: -29px;
-  pointer-events: none;
-  z-index: 9999;
+  width: 50px;
+  height: 50px;
+  pointer-events: none !important;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
   will-change: transform;
+}
+
+.custom-cursor * {
+  pointer-events: none !important;
 }
 
 .cursor-ring {
@@ -233,7 +235,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: transform 0.4s var(--ease), background-color 0.35s var(--ease), border-color 0.35s var(--ease);
+  transition: transform 0.25s var(--ease), background-color 0.25s var(--ease), border-color 0.25s var(--ease);
 }
 
 .cursor-dot {
@@ -279,6 +281,34 @@
   visibility: hidden;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Floating Emoji Reaction Animation */
+@keyframes floatUpAndFade {
+  0% {
+    bottom: 80px;
+    opacity: 1;
+    transform: translateY(0) scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-260px) scale(1.25) rotate(12deg);
+  }
+  100% {
+    bottom: 80px;
+    opacity: 0;
+    transform: translateY(-580px) scale(1.4) rotate(-15deg);
+  }
+}
+
+.floating-emoji {
+  position: absolute;
+  bottom: 80px;
+  font-size: 36px;
+  animation: floatUpAndFade 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
 }
 
 @media (prefers-reduced-motion: reduce) {
