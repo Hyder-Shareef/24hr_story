@@ -1,9 +1,9 @@
-/* Segmented Story Progress Bar */
+/* Segmented Story Progress Bar in Blue */
 .story-progress-container {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
-  padding: 12px 18px 8px;
+  padding: 16px 28px 10px;
   position: absolute;
   top: 0;
   left: 0;
@@ -14,24 +14,24 @@
 
 .progress-segment-track {
   flex: 1;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.28);
-  border-radius: 2px;
+  height: 4px;
+  background: rgba(31, 63, 176, 0.22);
+  border-radius: 9999px;
   overflow: hidden;
   position: relative;
 }
 
 .progress-segment-fill {
   height: 100%;
-  background: #ffffff;
-  border-radius: 2px;
+  background: var(--cobalt, #1F3FB0);
+  border-radius: 9999px;
   transition: width 25ms linear;
   will-change: width;
 }
 
 .progress-segment-fill.current {
   background: var(--cobalt, #1F3FB0);
-  box-shadow: 0 0 8px rgba(31, 63, 176, 0.8);
+  box-shadow: 0 0 10px rgba(31, 63, 176, 0.75);
 }
 
 .story-progress-container.is-paused .progress-segment-fill {

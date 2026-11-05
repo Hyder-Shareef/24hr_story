@@ -11,7 +11,7 @@ interface Shelf3DProps {
   onActiveStoryChange: (story: StoryBook | null, direction: number) => void;
   onOpenDetail: (story: StoryBook) => void;
   onOpenAddModal: () => void;
-  onCursorModeChange: (mode: CursorMode) => void;
+  onCursorModeChange?: (mode: any) => void;
   activeCoverRef: React.MutableRefObject<HTMLDivElement | null>;
 }
 
@@ -134,21 +134,23 @@ export default function Shelf3D({
         Math.abs(mx - W / 2) <= 0.55 * d &&
         Math.abs(my - cy) <= 0.55 * H;
 
-      if (isOpen) {
-        onCursorModeChange('default');
-      } else if (isDraggingRef.current) {
-        onCursorModeChange('drag');
-      } else if (onCenterCover) {
-        onCursorModeChange(stories.length === 0 ? 'add' : 'open');
-      } else if (hoverIndexRef.current >= 0) {
-        const rel = hoverIndexRef.current - sRef.current;
-        if (Math.abs(rel) < 0.45) {
+      if (onCursorModeChange) {
+        if (isOpen) {
+          onCursorModeChange('default');
+        } else if (isDraggingRef.current) {
+          onCursorModeChange('drag');
+        } else if (onCenterCover) {
           onCursorModeChange(stories.length === 0 ? 'add' : 'open');
+        } else if (hoverIndexRef.current >= 0) {
+          const rel = hoverIndexRef.current - sRef.current;
+          if (Math.abs(rel) < 0.45) {
+            onCursorModeChange(stories.length === 0 ? 'add' : 'open');
+          } else {
+            onCursorModeChange('btn');
+          }
         } else {
-          onCursorModeChange('btn');
+          onCursorModeChange('default');
         }
-      } else {
-        onCursorModeChange('default');
       }
 
       // Tilt computation
@@ -308,14 +310,11 @@ export default function Shelf3D({
       return;
     }
 
-    const rel = i - sRef.current;
-    if (Math.abs(rel) < 0.45) {
-      // Center book clicked -> Open story viewer!
-      const story = stories[i];
-      if (story) onOpenDetail(story);
-    } else {
-      // Adjacent book clicked -> Smoothly center it
+    // Clicking ANY part of ANY book immediately opens that story in the viewer
+    const story = stories[i];
+    if (story) {
       tRef.current = i;
+      onOpenDetail(story);
     }
   };
 
@@ -587,7 +586,8 @@ export default function Shelf3D({
 
                 {/* 3. Back Cover Face */}
                 <div
-                  className="tape-face tape-back"
+                  className="tape-face tape-back cursor-pointer"
+                  onClick={() => handleBookClick(i)}
                   style={{
                     backgroundColor: spinePalette.bg,
                     border: '1px solid rgba(0,0,0,0.2)',
@@ -595,10 +595,16 @@ export default function Shelf3D({
                 />
 
                 {/* 4. Page Fore-Edge */}
-                <div className="tape-face tape-pages" />
+                <div
+                  className="tape-face tape-pages cursor-pointer"
+                  onClick={() => handleBookClick(i)}
+                />
 
                 {/* 5. Top Page Edge */}
-                <div className="tape-top-pages" />
+                <div
+                  className="tape-top-pages cursor-pointer"
+                  onClick={() => handleBookClick(i)}
+                />
 
                 {/* 6. Realistic Ambient Floor Shadow */}
                 <div className="tape-shadow" />

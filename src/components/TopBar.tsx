@@ -14,8 +14,7 @@ export default function TopBar({ onBack, onAddStory }: TopBarProps) {
           <button
             type="button"
             onClick={onBack}
-            className="box lbl text-[var(--ink)] hover:opacity-80 transition-opacity cursor-pointer"
-            data-cursor="btn"
+            className="box lbl cursor-pointer"
             aria-label="Back to start"
           >
             BACK
@@ -24,8 +23,7 @@ export default function TopBar({ onBack, onAddStory }: TopBarProps) {
             <button
               type="button"
               onClick={onAddStory}
-              className="box lbl text-[var(--cobalt)] border-[var(--cobalt)] hover:bg-[var(--cobalt)] hover:text-white transition-colors cursor-pointer"
-              data-cursor="btn"
+              className="box box-cobalt lbl cursor-pointer"
               aria-label="Add story"
             >
               + ADD STORY

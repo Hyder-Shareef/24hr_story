@@ -73,7 +73,8 @@ export default function DecadeTabs({
         />
 
         {TABS.map((tab) => {
-          const isActive = tab === activeTab;
+          const isAddTab = tab === '+ ADD STORY';
+          const isActive = tab === activeTab && !isAddTab;
 
           return (
             <button
@@ -82,19 +83,22 @@ export default function DecadeTabs({
                 btnRefs.current[tab] = el;
               }}
               onClick={() => {
-                if (tab === '+ ADD STORY') {
+                if (isAddTab) {
                   if (onAddStory) onAddStory();
-                  else onSelectTab(tab);
                 } else {
                   onSelectTab(tab);
                 }
               }}
-              className="lbl relative z-10 box h-[23px] px-[11px] max-md:px-[7px] max-md:text-[9px] -ml-[1px] first:ml-0 border-[var(--rule)] cursor-pointer whitespace-nowrap focus:outline-none"
+              className={`lbl relative z-10 box h-[23px] px-[11px] max-md:px-[7px] max-md:text-[9px] -ml-[1px] first:ml-0 cursor-pointer whitespace-nowrap focus:outline-none transition-colors ${
+                isAddTab
+                  ? 'box-cobalt'
+                  : isActive
+                  ? 'text-white'
+                  : 'text-[var(--ink)]'
+              }`}
               style={{
-                color: isActive ? '#FFFFFF' : 'var(--ink)',
-                transition: 'color 0.45s ease',
+                color: isAddTab ? 'var(--cobalt)' : isActive ? '#FFFFFF' : 'var(--ink)',
               }}
-              data-cursor="btn"
               aria-pressed={isActive}
             >
               {tab === 'ALL STORIES' && storyCount > 0 ? `ALL STORIES (${storyCount})` : tab}

@@ -21,18 +21,6 @@ interface DetailModalProps {
   getCoverRect: () => DOMRect | null;
 }
 
-// Multi-layered organic inkdrop impact and radial splatter droplets
-const INK_DROPLETS = [
-  { cx: 237, cy: 450, rMax: 920, delay: 0 },    // Core central droplet impact
-  { cx: 160, cy: 310, rMax: 480, delay: 90 },   // Radial splatter 1
-  { cx: 330, cy: 590, rMax: 520, delay: 140 },  // Radial splatter 2
-  { cx: 280, cy: 210, rMax: 440, delay: 200 },  // Radial splatter 3
-  { cx: 100, cy: 660, rMax: 460, delay: 260 },  // Radial splatter 4
-  { cx: 400, cy: 370, rMax: 480, delay: 310 },  // Radial splatter 5
-  { cx: 230, cy: 790, rMax: 460, delay: 360 },  // Radial splatter 6
-  { cx: 80, cy: 440, rMax: 400, delay: 180 },   // Outer droplet 7
-];
-
 export default function DetailModal({
   story,
   totalItems,
@@ -48,20 +36,29 @@ export default function DetailModal({
 }: DetailModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const textLineRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const circleRefs = useRef<(SVGCircleElement | null)[]>([]);
   const animRef = useRef<Animation | null>(null);
   const [activeStoryState, setActiveStoryState] = useState<StoryBook | null>(story);
   const [isRendered, setIsRendered] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 450);
+  }, [isClosing, onClose]);
 
   // Playback engine for automatic 3-second story progression
   const { progress, isPaused, pause, resume } = useStoryPlayback({
     currentIndex,
     totalStories: totalItems,
-    isOpen: isOpen && !showDeleteConfirm && !isEditOpen,
+    isOpen: isOpen && !showDeleteConfirm && !isEditOpen && !isClosing,
     onNext: () => onNext?.(),
-    onComplete: () => onClose(),
+    onComplete: () => handleClose(),
   });
 
   // Update story state when opening or prop changes
@@ -83,12 +80,7 @@ export default function DetailModal({
       setIsRendered(true);
       dialog.style.visibility = 'visible';
 
-      // 1. Reset blob radii to 0 for initial droplet impact
-      circleRefs.current.forEach((circle) => {
-        if (circle) circle.setAttribute('r', reducedMotion ? '920' : '0');
-      });
-
-      // 2. Measure active book cover rect for origin
+      // Measure active book cover rect for origin
       const coverRect = getCoverRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -113,9 +105,6 @@ export default function DetailModal({
         textLineRefs.current.forEach((line) => {
           if (line) line.style.transform = 'translateY(0%)';
         });
-        circleRefs.current.forEach((circle, idx) => {
-          if (circle) circle.setAttribute('r', `${INK_DROPLETS[idx]?.rMax || 920}`);
-        });
         return;
       }
 
@@ -138,7 +127,7 @@ export default function DetailModal({
       });
       animRef.current = anim;
 
-      // 3. Staggered text reveal
+      // Staggered text reveal
       textLineRefs.current.forEach((line, idx) => {
         if (!line) return;
         line.animate(
@@ -154,51 +143,8 @@ export default function DetailModal({
           }
         );
       });
-
-      // 4. Inkdrop impact bloom across paper fibers
-      let rafId: number;
-      const startTime = performance.now() + 450;
-      const duration = 1150;
-
-      const animateBlobs = (now: number) => {
-        const elapsed = now - startTime;
-        let allDone = true;
-
-        INK_DROPLETS.forEach((blob, i) => {
-          const circle = circleRefs.current[i];
-          if (!circle) return;
-
-          const blobElapsed = elapsed - blob.delay;
-          if (blobElapsed <= 0) {
-            circle.setAttribute('r', '0');
-            allDone = false;
-          } else {
-            const p = Math.min(1, blobElapsed / duration);
-            // Organic fluid viscous expansion curve
-            const ease = 1 - Math.pow(1 - p, 3.2);
-            const radius = ease * blob.rMax;
-            circle.setAttribute('r', radius.toFixed(1));
-            if (p < 1) allDone = false;
-          }
-        });
-
-        if (elapsed < 2100 && !allDone) {
-          rafId = requestAnimationFrame(animateBlobs);
-        } else {
-          INK_DROPLETS.forEach((blob, i) => {
-            const circle = circleRefs.current[i];
-            if (circle) circle.setAttribute('r', `${blob.rMax}`);
-          });
-        }
-      };
-
-      rafId = requestAnimationFrame(animateBlobs);
-
-      return () => {
-        cancelAnimationFrame(rafId);
-      };
     } else if (isRendered) {
-      // 5. REVERSE INK-DROP REVEAL: Drains all ink back into central droplet on close!
+      // Reverse paper sheet contraction on close
       const coverRect = getCoverRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -221,30 +167,6 @@ export default function DetailModal({
         return;
       }
 
-      // Reverse ink drain animation loop
-      let drainRafId: number;
-      const drainStartTime = performance.now();
-      const drainDuration = 650;
-
-      const animateReverseDrain = (now: number) => {
-        const elapsed = now - drainStartTime;
-        const p = Math.min(1, elapsed / drainDuration);
-        const ease = Math.pow(1 - p, 2.5); // Sucks ink back inward
-
-        INK_DROPLETS.forEach((blob, i) => {
-          const circle = circleRefs.current[i];
-          if (circle) {
-            circle.setAttribute('r', `${(blob.rMax * ease).toFixed(1)}`);
-          }
-        });
-
-        if (p < 1) {
-          drainRafId = requestAnimationFrame(animateReverseDrain);
-        }
-      };
-
-      drainRafId = requestAnimationFrame(animateReverseDrain);
-
       const closeAnim = dialog.animate(
         [
           {
@@ -264,7 +186,6 @@ export default function DetailModal({
       );
 
       closeAnim.onfinish = () => {
-        cancelAnimationFrame(drainRafId);
         dialog.style.visibility = 'hidden';
         setIsRendered(false);
         closeAnim.cancel();
@@ -285,7 +206,7 @@ export default function DetailModal({
       }
 
       if (e.key === 'Escape') {
-        onClose();
+        handleClose();
       } else if (e.key === 'ArrowRight') {
         onNext?.();
       } else if (e.key === 'ArrowLeft') {
@@ -345,9 +266,8 @@ export default function DetailModal({
       <div className="fixed top-0 left-0 right-0 h-[84px] max-md:h-[64px] px-8 max-md:px-4 flex items-center justify-between z-10 pointer-events-auto">
         <button
           type="button"
-          onClick={onClose}
-          className="box lbl text-[var(--ink)] hover:opacity-80 transition-opacity cursor-pointer"
-          data-cursor="btn"
+          onClick={handleClose}
+          className="box box-cobalt lbl cursor-pointer"
           aria-label="Close story viewer"
         >
           CLOSE
@@ -373,7 +293,6 @@ export default function DetailModal({
               setIsEditOpen(true);
             }}
             className="box lbl text-[var(--cobalt)] border-[var(--cobalt)] hover:bg-[var(--cobalt)] hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 px-3 py-1.5"
-            data-cursor="btn"
             aria-label="Edit story"
           >
             <Pencil size={12} />
@@ -389,7 +308,6 @@ export default function DetailModal({
                 setShowDeleteConfirm(true);
               }}
               className="box lbl text-[#d63031] border-[#d63031] hover:bg-[#d63031] hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 px-3 py-1.5"
-              data-cursor="btn"
               aria-label="Delete story"
             >
               <Trash2 size={12} />
@@ -406,7 +324,7 @@ export default function DetailModal({
       {/* In-App Delete Confirmation Dialog */}
       {showDeleteConfirm && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 pointer-events-auto"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-xs p-4 pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div
@@ -465,29 +383,15 @@ export default function DetailModal({
 
       {/* Main Content Grid: 2 equal columns */}
       <div className="flex-1 w-full max-w-[1600px] mx-auto grid grid-cols-2 max-md:flex max-md:flex-col gap-[4vw] max-md:gap-[20px] pt-[100px] max-md:pt-[76px] px-[7vw] max-md:px-[20px] pb-[40px] max-md:pb-[24px] items-center relative">
-        {/* Mobile Poster (moves first in single column on mobile) */}
-        <div className="hidden max-md:flex items-center justify-center w-full h-[46svh]">
-          <svg
-            viewBox="0 0 474 900"
-            className="h-full w-auto aspect-[474/900] shadow-2xl rounded-[3px]"
-            aria-hidden="true"
-          >
-            <defs>
-              <clipPath id="mobile-poster-clip">
-                <rect width="474" height="900" rx="3" />
-              </clipPath>
-            </defs>
-            <g clipPath="url(#mobile-poster-clip)">
-              <image
-                href={activeStoryState.image}
-                x="0"
-                y="0"
-                width="474"
-                height="900"
-                preserveAspectRatio="xMidYMid slice"
-              />
-            </g>
-          </svg>
+        {/* Mobile Poster (full story image display with zero cropping) */}
+        <div className="hidden max-md:flex items-center justify-center w-full max-h-[50svh]">
+          <img
+            src={activeStoryState.image}
+            alt={activeStoryState.title || 'Story'}
+            className={`max-h-[48svh] max-w-full w-auto h-auto object-contain rounded-[4px] shadow-2xl block select-none pointer-events-auto ${
+              isClosing ? 'ink-drain-anim' : 'ink-bloom-anim'
+            }`}
+          />
         </div>
 
         {/* Left Column: text details & navigation */}
@@ -552,8 +456,7 @@ export default function DetailModal({
                 <button
                   type="button"
                   onClick={onPrev}
-                  className="box lbl h-[42px] px-[16px] border-[var(--ink)] text-[var(--ink)] hover:bg-[var(--ink)] hover:text-white transition-colors cursor-pointer select-none"
-                  data-cursor="btn"
+                  className="box box-cobalt lbl h-[42px] px-[16px] cursor-pointer select-none"
                 >
                   &larr; PREVIOUS
                 </button>
@@ -562,8 +465,7 @@ export default function DetailModal({
                 <button
                   type="button"
                   onClick={onNext}
-                  className="box lbl h-[42px] px-[18px] border-[var(--cobalt)] text-[var(--cobalt)] hover:bg-[var(--cobalt)] hover:text-white transition-colors cursor-pointer select-none"
-                  data-cursor="btn"
+                  className="box box-cobalt lbl h-[42px] px-[18px] cursor-pointer select-none"
                 >
                   NEXT STORY &rarr;
                 </button>
@@ -587,7 +489,7 @@ export default function DetailModal({
         </div>
 
         {/* Right Column (Desktop): Full Story Image with Inkdrop Bloom & Reverse Drain */}
-        <div className="max-md:hidden flex items-center justify-center h-full max-h-[78vh] relative">
+        <div className="max-md:hidden flex items-center justify-center h-full max-h-[78vh] relative w-full">
           {/* Click zones for Previous (left 35%) and Next (right 65%) */}
           <div
             onClick={(e) => {
@@ -606,72 +508,15 @@ export default function DetailModal({
             title="Next Story"
           />
 
-          <svg
-            viewBox="0 0 474 900"
-            className="h-[min(100%,78vh)] w-auto aspect-[474/900] shadow-2xl rounded-[3px]"
-            aria-hidden="true"
-          >
-            <defs>
-              {/* High-Viscosity Ink Bleed Fractal Filter */}
-              <filter id="ink-bleed-filter" x="-30%" y="-30%" width="160%" height="160%">
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="0.014"
-                  numOctaves="4"
-                  seed="11"
-                  result="noise"
-                />
-                <feDisplacementMap
-                  in="SourceGraphic"
-                  in2="noise"
-                  scale="160"
-                  xChannelSelector="R"
-                  yChannelSelector="G"
-                />
-              </filter>
-
-              {/* Ink-Drop Radial Splatter Mask */}
-              <mask
-                id="reverse-ink-mask"
-                maskUnits="userSpaceOnUse"
-                x="-300"
-                y="-300"
-                width="1074"
-                height="1500"
-              >
-                <g filter="url(#ink-bleed-filter)">
-                  {INK_DROPLETS.map((blob, idx) => (
-                    <circle
-                      key={idx}
-                      ref={(el) => {
-                        circleRefs.current[idx] = el;
-                      }}
-                      cx={blob.cx}
-                      cy={blob.cy}
-                      r="0"
-                      fill="#ffffff"
-                    />
-                  ))}
-                </g>
-              </mask>
-
-              <clipPath id="desktop-poster-clip">
-                <rect width="474" height="900" rx="3" />
-              </clipPath>
-            </defs>
-
-            <g clipPath="url(#desktop-poster-clip)">
-              <image
-                href={activeStoryState.image}
-                x="0"
-                y="0"
-                width="474"
-                height="900"
-                preserveAspectRatio="xMidYMid slice"
-                mask="url(#reverse-ink-mask)"
-              />
-            </g>
-          </svg>
+          <div className="relative flex items-center justify-center max-h-[78vh] max-w-full">
+            <img
+              src={activeStoryState.image}
+              alt={activeStoryState.title || 'Story'}
+              className={`max-h-[76vh] max-w-full w-auto h-auto object-contain rounded-[4px] shadow-2xl block select-none pointer-events-auto ${
+                isClosing ? 'ink-drain-anim' : 'ink-bloom-anim'
+              }`}
+            />
+          </div>
         </div>
       </div>
     </div>

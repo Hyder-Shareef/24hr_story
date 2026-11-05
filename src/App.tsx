@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Arrows from './components/Arrows';
 import Caption from './components/Caption';
-import CustomCursor, { CursorMode } from './components/CustomCursor';
 import DecadeTabs from './components/DecadeTabs';
 import DetailModal from './components/DetailModal';
 import Footer from './components/Footer';
 import PaperGrain from './components/PaperGrain';
-import PlayRing from './components/PlayRing';
 import Shelf3D from './components/Shelf3D';
 import TopBar from './components/TopBar';
 import ImageUploadModal from './components/UploadModal/ImageUploadModal';
@@ -30,8 +28,6 @@ export default function App() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeStory, setActiveStory] = useState<StoryBook | null>(stories[0] || null);
   const [captionDirection, setCaptionDirection] = useState(1);
-  const [cursorMode, setCursorMode] = useState<CursorMode>('default');
-  const [btnHovered, setBtnHovered] = useState(false);
 
   const activeCoverRef = useRef<HTMLDivElement | null>(null);
 
@@ -137,30 +133,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handlePrev, handleNext, handleViewerPrev, handleViewerNext, isDetailOpen, isUploadOpen, stories.length, activeStory]);
 
-  // Track button hover for custom cursor
-  useEffect(() => {
-    const handlePointerOver = (e: PointerEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest('[data-cursor="btn"]')) {
-        setBtnHovered(true);
-      }
-    };
-
-    const handlePointerOut = (e: PointerEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest('[data-cursor="btn"]')) {
-        setBtnHovered(false);
-      }
-    };
-
-    window.addEventListener('pointerover', handlePointerOver, { passive: true });
-    window.addEventListener('pointerout', handlePointerOut, { passive: true });
-    return () => {
-      window.removeEventListener('pointerover', handlePointerOver);
-      window.removeEventListener('pointerout', handlePointerOut);
-    };
-  }, []);
-
   const handleStoryCreated = (storyData: any) => {
     const result = addStory(storyData);
     if (result && result.success) {
@@ -184,13 +156,6 @@ export default function App() {
       setActiveStory(stories[nextIdx] || null);
     }
   };
-
-  // Effective cursor mode: prioritizes detail, open/add, drag, and button states
-  const effectiveCursorMode: CursorMode = isDetailOpen
-    ? 'default'
-    : btnHovered
-    ? 'btn'
-    : cursorMode;
 
   const [dimensions, setDimensions] = useState(() => {
     if (typeof window === 'undefined') return { H: 380, d: 200 };
@@ -250,35 +215,19 @@ export default function App() {
           setIsDetailOpen(true);
         }}
         onOpenAddModal={() => setIsUploadOpen(true)}
-        onCursorModeChange={setCursorMode}
         activeCoverRef={activeCoverRef}
       />
 
-      {/* 5. Center Play Ring (appears when settled on a story book) */}
-      {stories.length > 0 && (
-        <PlayRing
-          d={d}
-          H={H}
-          s={0}
-          T={0}
-          isOpen={isDetailOpen}
-          isAddCard={false}
-          onOpen={() => {
-            if (activeStory) setIsDetailOpen(true);
-          }}
-        />
-      )}
-
-      {/* 6. Caption with story details & 24h countdown */}
+      {/* 5. Caption with story details & 24h countdown */}
       <Caption story={activeStory} direction={captionDirection} />
 
-      {/* 7. Arrow navigation (only visible when multiple stories exist) */}
+      {/* 6. Arrow navigation (only visible when multiple stories exist) */}
       {stories.length > 1 && <Arrows onPrev={handlePrev} onNext={handleNext} />}
 
-      {/* 8. Footer */}
+      {/* 7. Footer */}
       <Footer storageUsageKB={storageUsageKB} />
 
-      {/* 9. Detail modal sheet & story viewer with ink-reveal */}
+      {/* 8. Detail modal sheet & story viewer with ink-reveal */}
       <DetailModal
         story={activeStory}
         totalItems={stories.length}
@@ -301,15 +250,12 @@ export default function App() {
         }}
       />
 
-      {/* 10. Image Upload Modal */}
+      {/* 9. Image Upload Modal */}
       <ImageUploadModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
         onStoryCreated={handleStoryCreated}
       />
-
-      {/* 11. High-Performance Custom Cursor (zero re-renders on mousemove) */}
-      <CustomCursor mode={effectiveCursorMode} />
     </div>
   );
 }

@@ -2,15 +2,15 @@
 .upload-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(20, 20, 20, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(20, 20, 20, 0.25);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 20px;
-  animation: modal-fade-in 250ms ease forwards;
+  animation: modal-fade-in 200ms ease forwards;
 }
 
 @keyframes modal-fade-in {
@@ -81,8 +81,9 @@
 }
 
 .modal-close-btn:hover {
-  background-color: var(--ink, #141414);
-  color: #ffffff;
+  background-color: rgba(31, 63, 176, 0.08);
+  border-color: var(--cobalt, #1F3FB0);
+  color: var(--cobalt, #1F3FB0);
 }
 
 .modal-close-icon {
