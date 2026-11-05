@@ -1,0 +1,93 @@
+/* --------------------------------------------------
+   CINEMATIC EDITORIAL DESIGN TOKENS & SYSTEM
+-------------------------------------------------- */
+:root {
+  --paper: #EDEBE6;
+  --sheet: #F4F2ED;
+  --ink: #141414;
+  --muted: #6D6A63;
+  --cobalt: #1F3FB0;
+  --rule: rgba(20, 20, 20, 0.9);
+
+  /* Typography Stacks */
+  --font-serif: 'Newsreader', Georgia, serif;
+  --font-sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-jp: 'Noto Sans JP', sans-serif;
+
+  /* Reference Easing Curve */
+  --ease-cinematic: cubic-bezier(0.76, 0, 0.18, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background-color: var(--paper, #EDEBE6);
+  color: var(--ink, #141414);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Hide default cursor only when fine pointer is active */
+@media (pointer: fine) {
+  body, button, a, input, [role="button"] {
+    cursor: none !important;
+  }
+}
+
+/* Global Paper Grain Texture Layer */
+.paper-grain-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 99998;
+  filter: url(#paper-grain);
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--paper, #EDEBE6);
+}
+
+/* Application Wrapper */
+.cinematic-editorial-app {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--paper, #EDEBE6);
+}
+
+.main-stage-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+
+/* Accessibility: Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

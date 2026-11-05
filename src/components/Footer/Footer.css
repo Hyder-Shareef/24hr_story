@@ -1,0 +1,66 @@
+/* Minimal Editorial Footer */
+.editorial-footer {
+  margin-top: auto;
+  padding: 16px 32px 26px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--rule, rgba(20, 20, 20, 0.9));
+  background-color: var(--paper, #EDEBE6);
+  box-sizing: border-box;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+}
+
+.footer-copyright {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--muted, #6D6A63);
+  text-transform: uppercase;
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer-storage-badge {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--cobalt, #1F3FB0);
+  background: rgba(31, 63, 176, 0.08);
+  padding: 3px 8px;
+  border: 1px solid rgba(31, 63, 176, 0.2);
+}
+
+.footer-tag {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink, #141414);
+  text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+  .editorial-footer {
+    padding: 14px 16px 18px;
+  }
+
+  .footer-copyright {
+    font-size: 0.58rem;
+  }
+
+  .footer-tag {
+    font-size: 0.58rem;
+  }
+}
+

@@ -1,0 +1,121 @@
+/* Cinematic 3D Stories Stage */
+.editorial-gallery-section {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--paper, #EDEBE6);
+  overflow: hidden;
+  user-select: none;
+}
+
+.gallery-stage-viewport {
+  position: relative;
+  width: 100%;
+  height: 440px;
+  perspective: 2200px;
+  perspective-origin: center center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.gallery-stage-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-item-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-style: preserve-3d;
+  transition: 
+    transform 650ms cubic-bezier(0.76, 0, 0.18, 1),
+    opacity 450ms ease;
+  will-change: transform, opacity;
+}
+
+/* Stage Navigation Arrows */
+.stage-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 0;
+  border: 1px solid var(--rule, rgba(20, 20, 20, 0.9));
+  background: var(--sheet, #F4F2ED);
+  color: var(--ink, #141414);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50;
+  box-shadow: 2px 2px 0px rgba(20, 20, 20, 0.1);
+  transition: background-color 200ms ease, color 200ms ease, transform 150ms ease;
+}
+
+.stage-nav-arrow:hover {
+  background-color: var(--ink, #141414);
+  color: var(--paper, #EDEBE6);
+}
+
+.stage-nav-arrow:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.arrow-prev {
+  left: 24px;
+}
+
+.arrow-next {
+  right: 24px;
+}
+
+.arrow-icon {
+  width: 22px;
+  height: 22px;
+}
+
+@media (max-width: 768px) {
+  .gallery-stage-viewport {
+    height: 380px;
+  }
+
+  .stage-nav-arrow {
+    width: 36px;
+    height: 36px;
+  }
+
+  .arrow-prev {
+    left: 12px;
+  }
+
+  .arrow-next {
+    right: 12px;
+  }
+
+  .arrow-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery-stage-viewport {
+    height: 340px;
+  }
+  
+  .stage-nav-arrow {
+    display: none; /* Mobile utilizes native touch drag */
+  }
+}
+

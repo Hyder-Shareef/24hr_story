@@ -1,0 +1,116 @@
+/* Custom Editorial Cursor */
+.editorial-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 58px;
+  height: 58px;
+  margin-top: -29px;
+  margin-left: -29px;
+  pointer-events: none;
+  z-index: 999999;
+  opacity: 0;
+  transform: translate3d(-100px, -100px, 0);
+  transition: opacity 200ms ease;
+  will-change: transform;
+}
+
+.editorial-cursor.visible {
+  opacity: 1;
+}
+
+.cursor-ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink, #141414);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: 
+    transform 350ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cursor-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--ink, #141414);
+  transition: opacity 250ms ease, transform 250ms ease;
+}
+
+.cursor-label {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 250ms cubic-bezier(0.16, 1, 0.3, 1), transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.cursor-label .label-en {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.cursor-label .label-jp {
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+}
+
+/* Hovering over non-active story */
+.editorial-cursor.story .cursor-ring {
+  transform: scale(0.72);
+  border-color: rgba(20, 20, 20, 0.6);
+}
+
+/* Hovering over buttons/tabs/close */
+.editorial-cursor.button .cursor-ring {
+  transform: scale(0.52);
+  border-color: var(--cobalt, #1F3FB0);
+  background: rgba(31, 63, 176, 0.08);
+}
+.editorial-cursor.button .cursor-dot {
+  background-color: var(--cobalt, #1F3FB0);
+}
+
+/* Hovering over active story: Expands to filled Cobalt disc with OPEN */
+.editorial-cursor.active-story .cursor-ring {
+  transform: scale(1.48);
+  background-color: var(--cobalt, #1F3FB0);
+  border-color: var(--cobalt, #1F3FB0);
+  box-shadow: 0 10px 30px rgba(31, 63, 176, 0.35);
+}
+
+.editorial-cursor.active-story .cursor-dot {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.editorial-cursor.active-story .cursor-label {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Disable completely on mobile touch */
+@media (pointer: coarse), (hover: none) {
+  .editorial-cursor {
+    display: none !important;
+  }
+}
+

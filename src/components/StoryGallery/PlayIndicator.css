@@ -1,0 +1,90 @@
+/* Floating Cobalt Play / Open Indicator */
+.floating-play-ring {
+  position: absolute;
+  bottom: 24px;
+  right: 28px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 40;
+  padding: 0;
+  outline: none;
+  transition: 
+    transform 400ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 350ms ease;
+  will-change: transform, opacity;
+}
+
+.floating-play-ring.is-navigating {
+  transform: scale(0.4) rotate(-30deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.floating-play-ring.is-settled {
+  transform: scale(1) rotate(0deg);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.play-ring-border {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1.5px solid var(--cobalt, #1F3FB0);
+  background: var(--sheet, #F4F2ED);
+  box-shadow: 0 8px 24px rgba(31, 63, 176, 0.25), 0 2px 6px rgba(20, 20, 20, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cobalt, #1F3FB0);
+  transition: transform 200ms ease, background-color 200ms ease, color 200ms ease;
+}
+
+.floating-play-ring:hover .play-ring-border {
+  transform: scale(1.08);
+  background: var(--cobalt, #1F3FB0);
+  color: #ffffff;
+}
+
+.play-ring-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.play-ring-ping {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid var(--cobalt, #1F3FB0);
+  opacity: 0.35;
+  animation: ping-wave 3s infinite cubic-bezier(0, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+@keyframes ping-wave {
+  0% { transform: scale(1); opacity: 0.5; }
+  70% { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+@media (max-width: 600px) {
+  .floating-play-ring {
+    bottom: 16px;
+    right: 18px;
+    width: 44px;
+    height: 44px;
+  }
+  
+  .play-ring-icon {
+    width: 15px;
+    height: 15px;
+  }
+}
+
