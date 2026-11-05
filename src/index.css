@@ -299,32 +299,31 @@ button,
   overflow-x: hidden;
 }
 
-/* Floating Emoji Reaction Animation */
-@keyframes floatUpAndFade {
+/* Instagram-Style Flying Emoji Particles */
+@keyframes flyParticle {
   0% {
-    bottom: 80px;
     opacity: 1;
-    transform: translateY(0) scale(0.7);
+    transform: translate3d(0, 0, 0) scale(0.6) rotate(0deg);
   }
-  50% {
+  35% {
     opacity: 1;
-    transform: translateY(-260px) scale(1.25) rotate(12deg);
+    transform: translate3d(calc(var(--dx) * 0.45), calc(var(--dy) * 0.45), 0) scale(1.35) rotate(var(--rot));
   }
   100% {
-    bottom: 80px;
     opacity: 0;
-    transform: translateY(-580px) scale(1.4) rotate(-15deg);
+    transform: translate3d(var(--dx), var(--dy), 0) scale(1.6) rotate(calc(var(--rot) * 1.6));
   }
 }
 
-.floating-emoji {
-  position: absolute;
-  bottom: 80px;
-  font-size: 36px;
-  animation: floatUpAndFade 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  pointer-events: none;
+.fly-emoji-particle {
+  position: fixed;
+  font-size: 34px;
   user-select: none;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+  pointer-events: none;
+  z-index: 99999;
+  animation: flyParticle 1.15s cubic-bezier(0.16, 0.85, 0.35, 1.2) forwards;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+  will-change: transform, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {

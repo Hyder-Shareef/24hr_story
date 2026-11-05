@@ -247,7 +247,6 @@ export default function Shelf3D({
       moved: false,
     };
     velocityRef.current = 0;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -259,11 +258,16 @@ export default function Shelf3D({
     if (count <= 1) return;
 
     const dx = e.clientX - dragStartRef.current.x;
-    if (Math.abs(dx) > 6) {
-      isDraggingRef.current = true;
-      dragStartRef.current.moved = true;
-      const { ws, gap } = dimRef.current;
+    if (Math.abs(dx) > 10) {
+      if (!isDraggingRef.current) {
+        isDraggingRef.current = true;
+        dragStartRef.current.moved = true;
+        try {
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        } catch {}
+      }
 
+      const { ws, gap } = dimRef.current;
       const now = performance.now();
       const dt = Math.max(1, now - dragStartRef.current.time);
       velocityRef.current = -dx / dt;
@@ -280,14 +284,22 @@ export default function Shelf3D({
     }
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent) => {
+    try {
+      if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      }
+    } catch {}
+
     if (isDraggingRef.current) {
       const count = stories.length === 0 ? 1 : stories.length;
-      // Add natural momentum release
       let targetT = tRef.current + velocityRef.current * 12;
       targetT = Math.max(0, Math.min(count - 1, Math.round(targetT)));
       tRef.current = targetT;
-      isDraggingRef.current = false;
+      setTimeout(() => {
+        isDraggingRef.current = false;
+        dragStartRef.current.moved = false;
+      }, 50);
     }
   };
 
@@ -302,18 +314,23 @@ export default function Shelf3D({
     tRef.current = Math.max(0, Math.min(count - 1, Math.round(nextT)));
   };
 
-  const handleBookClick = (i: number) => {
-    if (dragStartRef.current.moved) return;
+  const handleBookClick = (i: number, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    if (isDraggingRef.current || dragStartRef.current.moved) return;
 
     if (stories.length === 0) {
       onOpenAddModal();
       return;
     }
 
-    // Clicking ANY part of ANY book immediately opens that story in the viewer
+    // Select this book and immediately open its story in the viewer
     const story = stories[i];
     if (story) {
       tRef.current = i;
+      sRef.current = i;
+      onActiveStoryChange(story, 0);
       onOpenDetail(story);
     }
   };
@@ -366,7 +383,7 @@ export default function Shelf3D({
               onPointerLeave={() => {
                 if (hoverIndexRef.current === 0) hoverIndexRef.current = -1;
               }}
-              onClick={() => handleBookClick(0)}
+              onClick={(e) => handleBookClick(0, e)}
               role="button"
               aria-label="Add story placeholder book"
               tabIndex={0}
@@ -377,6 +394,7 @@ export default function Shelf3D({
               {/* Spine Face: ADD STORY */}
               <div
                 className="tape-face tape-spine cursor-pointer flex flex-col justify-between"
+                onClick={(e) => handleBookClick(0, e)}
                 style={{
                   backgroundColor: '#F4F2ED',
                   border: '1.5px dashed var(--rule)',
@@ -409,6 +427,7 @@ export default function Shelf3D({
                   coverRefs.current[0] = el;
                 }}
                 className="tape-face tape-cover cursor-pointer relative overflow-hidden"
+                onClick={(e) => handleBookClick(0, e)}
                 style={{
                   backgroundColor: '#EDEBE6',
                   border: '2px dashed var(--cobalt)',
@@ -468,11 +487,14 @@ export default function Shelf3D({
                 className="tape"
                 onPointerEnter={() => {
                   hoverIndexRef.current = i;
+                  if (!isOpen && !isDraggingRef.current && stories[i]) {
+                    onActiveStoryChange(stories[i], i >= activeIndexRef.current ? 1 : -1);
+                  }
                 }}
                 onPointerLeave={() => {
                   if (hoverIndexRef.current === i) hoverIndexRef.current = -1;
                 }}
-                onClick={() => handleBookClick(i)}
+                onClick={(e) => handleBookClick(i, e)}
                 role="button"
                 aria-label={`${story.title} physical book`}
                 tabIndex={0}
@@ -483,6 +505,7 @@ export default function Shelf3D({
                 {/* 1. Spine Face: Caption printed vertically with embossed foil rules */}
                 <div
                   className="tape-face tape-spine cursor-pointer flex flex-col justify-between"
+                  onClick={(e) => handleBookClick(i, e)}
                   style={{
                     backgroundColor: spinePalette.bg,
                     border: '1px solid rgba(255,255,255,0.22)',
@@ -544,6 +567,7 @@ export default function Shelf3D({
                     coverRefs.current[i] = el;
                   }}
                   className="tape-face tape-cover cursor-pointer relative overflow-hidden"
+                  onClick={(e) => handleBookClick(i, e)}
                   style={{
                     backgroundImage: `url(${story.image})`,
                     backgroundSize: 'cover',
@@ -587,7 +611,7 @@ export default function Shelf3D({
                 {/* 3. Back Cover Face */}
                 <div
                   className="tape-face tape-back cursor-pointer"
-                  onClick={() => handleBookClick(i)}
+                  onClick={(e) => handleBookClick(i, e)}
                   style={{
                     backgroundColor: spinePalette.bg,
                     border: '1px solid rgba(0,0,0,0.2)',
@@ -597,13 +621,13 @@ export default function Shelf3D({
                 {/* 4. Page Fore-Edge */}
                 <div
                   className="tape-face tape-pages cursor-pointer"
-                  onClick={() => handleBookClick(i)}
+                  onClick={(e) => handleBookClick(i, e)}
                 />
 
                 {/* 5. Top Page Edge */}
                 <div
                   className="tape-top-pages cursor-pointer"
-                  onClick={() => handleBookClick(i)}
+                  onClick={(e) => handleBookClick(i, e)}
                 />
 
                 {/* 6. Realistic Ambient Floor Shadow */}

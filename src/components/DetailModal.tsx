@@ -61,137 +61,36 @@ export default function DetailModal({
     onComplete: () => handleClose(),
   });
 
-  // Update story state when opening or prop changes
+  // Update story state whenever story prop changes
   useEffect(() => {
-    if (isOpen && story) {
+    if (story) {
       setActiveStoryState(story);
       setShowDeleteConfirm(false);
       setIsEditOpen(false);
     }
-  }, [isOpen, story]);
+  }, [story]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
     if (isOpen) {
       setIsRendered(true);
       dialog.style.visibility = 'visible';
+      dialog.style.opacity = '1';
+      dialog.style.clipPath = 'none';
+      dialog.style.transform = 'none';
 
-      // Measure active book cover rect for origin
-      const coverRect = getCoverRect();
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-
-      const top = coverRect ? Math.max(0, coverRect.top) : vh / 2 - 200;
-      const left = coverRect ? Math.max(0, coverRect.left) : vw / 2 - 100;
-      const right = coverRect ? Math.max(0, vw - coverRect.right) : vw / 2 - 100;
-      const bottom = coverRect ? Math.max(0, vh - coverRect.bottom) : vh / 2 - 200;
-
-      const cx = coverRect ? coverRect.left + coverRect.width / 2 : vw / 2;
-      const cy = coverRect ? coverRect.top + coverRect.height / 2 : vh / 2;
-
-      dialog.style.transformOrigin = `${cx}px ${cy}px`;
-
-      if (animRef.current) {
-        animRef.current.cancel();
-      }
-
-      if (reducedMotion) {
-        dialog.style.clipPath = 'inset(0 0 0 0 round 0)';
-        dialog.style.transform = 'rotate(0deg)';
-        textLineRefs.current.forEach((line) => {
-          if (line) line.style.transform = 'translateY(0%)';
-        });
-        return;
-      }
-
-      // Paper sheet expansion from book
-      const keyframes = [
-        {
-          clipPath: `inset(${top}px ${right}px ${bottom}px ${left}px round 3px)`,
-          transform: 'rotate(-4.2deg)',
-        },
-        {
-          clipPath: 'inset(0px 0px 0px 0px round 0px)',
-          transform: 'rotate(0deg)',
-        },
-      ];
-
-      const anim = dialog.animate(keyframes, {
-        duration: 950,
-        easing: 'cubic-bezier(0.76, 0, 0.18, 1)',
-        fill: 'both',
-      });
-      animRef.current = anim;
-
-      // Staggered text reveal
-      textLineRefs.current.forEach((line, idx) => {
-        if (!line) return;
-        line.animate(
-          [
-            { transform: 'translateY(110%)' },
-            { transform: 'translateY(0%)' },
-          ],
-          {
-            duration: 850,
-            delay: 550 + idx * 70,
-            easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
-            fill: 'both',
-          }
-        );
+      // Fast, immediate text presentation
+      textLineRefs.current.forEach((line) => {
+        if (line) line.style.transform = 'translateY(0%)';
       });
     } else if (isRendered) {
-      // Reverse paper sheet contraction on close
-      const coverRect = getCoverRect();
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-
-      const top = coverRect ? Math.max(0, coverRect.top) : vh / 2 - 200;
-      const left = coverRect ? Math.max(0, coverRect.left) : vw / 2 - 100;
-      const right = coverRect ? Math.max(0, vw - coverRect.right) : vw / 2 - 100;
-      const bottom = coverRect ? Math.max(0, vh - coverRect.bottom) : vh / 2 - 200;
-
-      const cx = coverRect ? coverRect.left + coverRect.width / 2 : vw / 2;
-      const cy = coverRect ? coverRect.top + coverRect.height / 2 : vh / 2;
-
-      dialog.style.transformOrigin = `${cx}px ${cy}px`;
-
-      if (animRef.current) animRef.current.cancel();
-
-      if (reducedMotion) {
-        dialog.style.visibility = 'hidden';
-        setIsRendered(false);
-        return;
-      }
-
-      const closeAnim = dialog.animate(
-        [
-          {
-            clipPath: 'inset(0px 0px 0px 0px round 0px)',
-            transform: 'rotate(0deg)',
-          },
-          {
-            clipPath: `inset(${top}px ${right}px ${bottom}px ${left}px round 3px)`,
-            transform: 'rotate(-4.2deg)',
-          },
-        ],
-        {
-          duration: 750,
-          easing: 'cubic-bezier(0.76, 0, 0.18, 1)',
-          fill: 'both',
-        }
-      );
-
-      closeAnim.onfinish = () => {
-        dialog.style.visibility = 'hidden';
-        setIsRendered(false);
-        closeAnim.cancel();
-      };
+      dialog.style.visibility = 'hidden';
+      dialog.style.opacity = '0';
+      setIsRendered(false);
     }
-  }, [isOpen, getCoverRect]);
+  }, [isOpen, isRendered]);
 
   // Keyboard navigation
   useEffect(() => {
